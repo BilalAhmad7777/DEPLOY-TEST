@@ -81,21 +81,21 @@ export const api = {
 
   getCategories: () => request("/api/categories"),
 
-  getEvents: (filters) => request(`/events${qs(filters)}`),
-  getEvent: (id) => request(`/events/${id}`),
+  getEvents: (filters) => request(`/api/events${qs(filters)}`),
+  getEvent: (id) => request(`/api/events/${id}`),
   createEvent: (payload) => request("/api/events", { method: "POST", body: JSON.stringify(payload) }),
-  updateEvent: (id, payload) => request(`/events/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  updateEvent: (id, payload) => request(`/api/events/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   completeEvent: (id) =>
-  request(`/events/${id}/complete`, {
+  request(`/api/events/${id}/complete`, {
     method: "POST",
   }),
   deleteEvent: (id) => request(`/events/${id}`, { method: "DELETE" }),
 
-  registerForEvent: (id) => request(`/events/${id}/register`, { method: "POST" }),
+  registerForEvent: (id) => request(`/api/events/${id}/register`, { method: "POST" }),
   
-  cancelRegistration: (id) => request(`/events/${id}/cancel`, { method: "POST" }),
+  cancelRegistration: (id) => request(`/api/events/${id}/cancel`, { method: "POST" }),
   approveRegistration: (eventId, registrationId) =>
-  request(`/events/${eventId}/approve-registration`, {
+  request(`/api/events/${eventId}/approve-registration`, {
     method: "POST",
     body: JSON.stringify({
       registration_id: registrationId,
@@ -103,7 +103,7 @@ export const api = {
   }),
 
 rejectRegistration: (eventId, registrationId, reason) =>
-  request(`/events/${eventId}/reject-registration`, {
+  request(`/api/events/${eventId}/reject-registration`, {
     method: "POST",
     body: JSON.stringify({
       registration_id: registrationId,
@@ -111,7 +111,7 @@ rejectRegistration: (eventId, registrationId, reason) =>
     }),
   }),
   rateEvent: (id, data) =>
-  request(`/events/${id}/rate`, {
+  request(`/api/events/${id}/rate`, {
     method: "POST",
     body: JSON.stringify(data),
   }),
@@ -119,20 +119,20 @@ rejectRegistration: (eventId, registrationId, reason) =>
 
   myRegistrations: () => request("/api/registrations/me"),
   myHistory: () => request("/api/registrations/history"),
-  eventRegistrations: (id) => request(`/events/${id}/registrations`),
+  eventRegistrations: (id) => request(`/api/events/${id}/registrations`),
   markAttendance: (id, user_id, attended) =>
-    request(`/events/${id}/attendance`, { method: "POST", body: JSON.stringify({ user_id, attended }) }),
+    request(`/api/events/${id}/attendance`, { method: "POST", body: JSON.stringify({ user_id, attended }) }),
 
   studentDashboard: () => request("/api/dashboard/student"),
   organizerDashboard: () => request("/api/dashboard/organizer"),
   adminDashboard: () => request("/api/dashboard/admin"),
 
   adminListUsers: () => request("/api/admin/users"),
-  approveOrganizer: (id) => request(`/admin/users/${id}/approve`, { method: "POST" }),
+  approveOrganizer: (id) => request(`/api/admin/users/${id}/approve`, { method: "POST" }),
   
 
   rejectOrganizer: (id, reason) =>
-  request(`/admin/users/${id}/reject`, {
+  request(`/api/admin/users/${id}/reject`, {
     method: "POST",
     body: JSON.stringify({ reason }),
   }),
@@ -142,7 +142,7 @@ rejectRegistration: (eventId, registrationId, reason) =>
   //   method: "POST",
   // }),
   scanAttendance: (eventId, registrationId) =>
-  request(`/events/${eventId}/attendance`, {
+  request(`/api/events/${eventId}/attendance`, {
     method: "POST",
     body: JSON.stringify({
       registration_id: registrationId,
@@ -154,12 +154,12 @@ rejectRegistration: (eventId, registrationId, reason) =>
 //     method: "POST",
 //   }),
  deleteUser: (id, reason) =>
-    request(`/admin/users/${id}`, {
+    request(`/api/admin/users/${id}`, {
         method: "DELETE",
         body: JSON.stringify({ reason }),
     }),
   // deleteUser: (id) => request(`/admin/users/${id}`, { method: "DELETE" }),
-  adminDeleteEvent: (id) => request(`/admin/events/${id}`, { method: "DELETE" }),
+  adminDeleteEvent: (id) => request(`/api/admin/events/${id}`, { method: "DELETE" }),
 sendDeleteOtp: () =>
   request("/api/account/send-delete-otp", {
     method: "POST",
