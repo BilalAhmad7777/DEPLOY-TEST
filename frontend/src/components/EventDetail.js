@@ -36,7 +36,7 @@ const [feedback, setFeedback] = useState("");
 
   const handleRegister = async () => {
     setError(""); setMessage("");
-    if (!user) return navigate("/login");
+    if (!user) return navigate("/");
     try {
       const res = await api.registerForEvent(id);
       setMessage(res.status === "waitlisted" ? "Event is full — you've been added to the waitlist." : "You're registered!");
