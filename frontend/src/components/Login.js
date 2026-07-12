@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./index.css";
 
-export default function Login() {
+export default function Login( {role} ) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -15,7 +15,7 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      const data = await api.login(email, password);
+      const data = await api.login(email, password, role);
       login(data.token, data.user);
       navigate("/events");
     } catch (err) {
@@ -33,8 +33,12 @@ export default function Login() {
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit">Log in</button>
         <p className="switch">
-          No account? <Link to="/signup">Sign up</Link>
-        </p>
+          {role !== "admin" && (
+  <p className="switch">
+    No account?{" "}
+    <Link to={`/signup/${role}`}>Sign up</Link>
+  </p>
+)} </p>
       </form>
     </div>
   );

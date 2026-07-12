@@ -26,18 +26,27 @@ const autoDownload =
 
       setRegistration(reg);
       if (reg) {
+        console.log(api.registrationQr(reg.registration_id));
   const response = await fetch(
-    api.registrationQr(reg.registration_id),
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    }
-  );
+  api.registrationQr(reg.registration_id),
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
 
-  const blob = await response.blob();
+console.log("QR Status:", response.status);
 
-  setQrUrl(URL.createObjectURL(blob));
+if (!response.ok) {
+  console.log(await response.text());
+  return;
+}
+
+const blob = await response.blob();
+console.log(blob);
+
+setQrUrl(URL.createObjectURL(blob));
 }
     };
 

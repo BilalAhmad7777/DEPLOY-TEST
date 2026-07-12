@@ -16,7 +16,7 @@ async function request(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
+  console.log("Request URL:", `${API_BASE}${path}`);
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Request failed");
@@ -56,15 +56,13 @@ export const api = {
 
 
 
-  login: (email, password) =>
-    request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
-
-  verifyEmail: (email, otp) =>
-  request("/api/auth/verify-email", {
+  login: (email, password, role) =>
+  request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({
       email,
-      otp,
+      password,
+      role,
     }),
   }),
 
@@ -171,7 +169,7 @@ deleteAccount: (otp) =>
     body: JSON.stringify({ otp }),
   }),
 registrationQr : (registrationId) =>
-  `${API_BASE}/registrations/${registrationId}/qr`,
+  `${API_BASE}/api/registrations/${registrationId}/qr`,
 };
 
 export { getToken, getUser };

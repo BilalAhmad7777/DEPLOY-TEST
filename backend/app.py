@@ -761,6 +761,16 @@ def login():
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
 
+    role = data.get("role", "")
+
+    if not user or not check_password_hash(user["password"], password):
+     return jsonify({"error": "Invalid email or password"}), 401
+    
+    if role and user["role"] != role:
+     return jsonify({
+        "error": f"This account is registered as a {user['role']}. Please use the correct login page."
+      }), 403
+
     user = users_col.find_one({"email": email})
 
     if not user or not check_password_hash(user["password"], password):

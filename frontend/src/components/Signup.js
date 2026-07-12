@@ -4,11 +4,11 @@ import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./index.css";
 
-export default function Signup() {
+export default function Signup({role}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
+  const signupRole = role;
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [profilePhoto, setProfilePhoto] = useState("");
@@ -104,7 +104,7 @@ if (!collegeId) {
       email,
       password,
       name,
-      role,
+      signupRole,
       rollNumber,
       profilePhoto,
       collegeId,
@@ -126,8 +126,15 @@ if (!collegeId) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Campus Events</h1>
-        <p className="subtitle">Create your account</p>
+        <h1>
+  {signupRole === "student"
+    ? "Student Sign Up"
+    : "Organizer Sign Up"}
+</h1>
+
+<p className="subtitle">
+  Create your {signupRole} account
+</p>
         {error && <div className="error">{error}</div>}
         {info && <div className="info">{info}</div>}
         <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -142,7 +149,7 @@ if (!collegeId) {
   onChange={(e) => setCollege(e.target.value)}
   required
 /> 
-       {role === "student" && (
+       {signupRole === "student" && (
   <input
     type="text"
     placeholder="College Roll Number"
@@ -152,15 +159,15 @@ if (!collegeId) {
   />
 )}      
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <label className="role-label">I am a:</label>
-        <div className="role-toggle">
-          <button type="button" className={role === "student" ? "active" : ""} onClick={() => setRole("student")}>
+        {/* <label className="signupRole-label">I am a:</label>
+        <div className="signupRole-toggle">
+          <button type="button" className={signupRole === "student" ? "active" : ""} onClick={() => setRole("student")}>
             Student
           </button>
-          <button type="button" className={role === "organizer" ? "active" : ""} onClick={() => setRole("organizer")}>
+          <button type="button" className={signupRole === "organizer" ? "active" : ""} onClick={() => setRole("organizer")}>
             Organizer
           </button>
-        </div>
+        </div> */}
 
         <label>Profile Photo</label>
 
@@ -212,7 +219,7 @@ if (!collegeId) {
 
         <button type="submit">Sign up</button>
         <p className="switch">
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link to={`/login/${signupRole}`}>Log in</Link>
         </p>
       </form>
     </div>

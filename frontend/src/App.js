@@ -15,6 +15,7 @@ import EventRegistrations from "./components/EventRegistrations";
 import StudentDashboard from "./components/StudentDashboard";
 import AdminPanel from "./components/AdminPanel";
 import Profile from "./components/Profile";
+import RoleSelection from "./components/RoleSelection";
 // import { Routes, Route, Navigate } from "react-router-dom";
 
 function PrivateRoute({ children, roles }) {
@@ -31,15 +32,18 @@ function Shell() {
       {user && <Navbar />}
       <div className="page">
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
+          <Route path="/login/student" element={<Login role="student" />} />
+          <Route path="/login/organizer" element={<Login role="organizer" />} />
+          <Route path="/login/admin" element={<Login role="admin" />} />
+
+          <Route path="/signup/student" element={<Signup role="student" />} />
+          <Route path="/signup/organizer" element={<Signup role="organizer" />} />
           <Route path="/events" element={<EventBrowse />} />
 
 
           {/* <Route path="/" element={<EventBrowse />} /> */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/events/:id" element={<EventDetail />} />
+<Route path="/" element={<RoleSelection />} />          <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/scanner" element={<QrScanner />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/ticket/:registrationId" element={<TicketPage />} />
