@@ -702,3 +702,10 @@ label {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d9d7cf; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #c7c4b9; }
+
+
+.link-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

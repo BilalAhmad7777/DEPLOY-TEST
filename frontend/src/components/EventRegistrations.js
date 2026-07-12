@@ -217,9 +217,13 @@ const waitlisted = regs.filter(
             {confirmed.map((r) => (
               <li key={r._id} className="subject-item">
                 <span className="subject-name">{r.student_name} ({r.student_college})</span>
-                <button className="status-pill" onClick={() => toggleAttendance(r.user_id, r.attended)}>
-                  {r.attended ? "Attended ✓" : "Mark attended"}
-                </button>
+                <span
+       className={`status-pill ${
+          r.attended ? "status-approved" : "status-pending"
+       }`}
+           >
+        {r.attended ? "Attended ✓" : "Not Attended"}
+        </span>
               </li>
             ))}
           </ul>

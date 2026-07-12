@@ -93,6 +93,16 @@ const confirmCompleteEvent = async () => {
   }
 };
 
+   const canEditEvent = (event) => {
+   const eventDate = new Date(event.date_time);
+   const lockDate = new Date(eventDate);
+   lockDate.setDate(lockDate.getDate() - 7);
+   return new Date() < lockDate; };
+
+   const canCompleteEvent = (event) => {
+  return new Date() >= new Date(event.date_time);
+};
+  
   return (
     <div className="container">
       <div className="dashboard-header">
@@ -126,9 +136,18 @@ const confirmCompleteEvent = async () => {
 
   {e.status !== "completed" && (
     <>
-      <Link to={`/organizer/events/${e._id}/edit`}>
-        Edit
-      </Link>
+      {canEditEvent(e) ? (
+  <Link to={`/organizer/events/${e._id}/edit`}>
+    Edit
+  </Link>
+) : (
+  <span
+    className="link-btn disabled"
+    title="Events cannot be edited within 7 days of the event."
+  >
+    Edit
+  </span>
+)}
 
       <Link to={`/organizer/events/${e._id}/registrations`}>
         Registrations
@@ -141,13 +160,19 @@ const confirmCompleteEvent = async () => {
   )}
 
   {e.status === "closed" && (
-    <button
-      className="link-btn"
-      onClick={() => completeEvent(e._id)}
-    >
-      Mark Completed
-    </button>
-  )}
+  <button
+    className="link-btn"
+    onClick={() => completeEvent(e._id)}
+    disabled={!canCompleteEvent(e)}
+    title={
+      !canCompleteEvent(e)
+        ? "You can mark the event as completed only after it has finished."
+        : ""
+    }
+  >
+    Mark Completed
+  </button>
+)}
 
   {e.status === "completed" && (
     <span
@@ -160,11 +185,11 @@ const confirmCompleteEvent = async () => {
     </span>
   )}
 
- {e.status === "completed" ? (
+ {!canEditEvent(e) ? (
   <button
     className="link-btn danger"
     disabled
-    title="Completed events cannot be deleted"
+    title="Events cannot be deleted within 7 days of the event."
   >
     Delete
   </button>

@@ -7,11 +7,8 @@ import string
 from datetime import datetime, timedelta
 from cloudinary.uploader import upload
 import cloudinary_config
-# from flask_mail import Mail, Message
 import os
-# import sib_api_v3_sdk
-# from sib_api_v3_sdk.rest import ApiException
-# from datetime import datetime
+
 import jwt
 from functools import wraps
 from flask import Flask, request, jsonify
@@ -23,12 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-# app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
-# app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT"))
-# app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS") == "True"
-# app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
-# app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-# mail = Mail(app)
+
 
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
@@ -78,8 +70,21 @@ ratings_col = db.ratings
 categories_col = db["categories"]
 
 DEFAULT_CATEGORIES = ["Tech", "Sports", "Cultural", "Workshop", "Seminar"]
-# Stores users who haven't verified their email yet
+
 pending_signups = {}
+
+
+
+
+
+# ==================================================
+# Application Rules
+# ==================================================
+
+EVENT_EDIT_LOCK_DAYS = 7
+ATTENDANCE_ONLY_ON_EVENT_DAY = True
+ALLOW_QR_ATTENDANCE_ONLY = True
+EVENT_DELETE_LOCK_DAYS = 7
 
 
 
@@ -1111,6 +1116,16 @@ def create_event():
         return jsonify({"error": "max_participants must be a positive number"}), 400
     
     event_time = datetime.fromisoformat(data["date_time"])
+    registration_deadline = datetime.fromisoformat(
+     data["registration_deadline"]
+              )
+
+    if registration_deadline >= event_time:
+     return jsonify({
+        "error": "Registration deadline must be before the event date."
+    }), 400
+
+
 
     hour = event_time.hour
 
@@ -1164,13 +1179,44 @@ def update_event(event_id):
     if request.role == "organizer" and event["organizer_id"] != request.user_id:
         return jsonify({"error": "You can only edit your own events"}), 403
     
+    # Event cannot be edited within EVENT_EDIT_LOCK_DAYS
+    event_datetime = datetime.fromisoformat(event["date_time"])
+
+    if datetime.now() >= event_datetime - timedelta(days=EVENT_EDIT_LOCK_DAYS):
+      return jsonify({
+        "error": f"Events cannot be edited within {EVENT_EDIT_LOCK_DAYS} days of the event."
+    }), 403
+    
     data = request.get_json() or {}
+    # Registration deadline must be before event date
+    new_event_date = data.get("date_time", event["date_time"])
+    new_deadline = data.get(
+      "registration_deadline",
+      event["registration_deadline"]
+)
+
+    if datetime.fromisoformat(new_deadline) >= datetime.fromisoformat(new_event_date):
+     return jsonify({
+        "error": "Registration deadline must be before the event date."
+    }), 400
     allowed = ["title", "description", "venue", "date_time", "category",
                "max_participants", "registration_deadline", "status", "poster_url"]
     update_fields = {k: data[k] for k in allowed if k in data}
     if "max_participants" in update_fields:
         try:
             update_fields["max_participants"] = int(update_fields["max_participants"])
+  
+
+            registered_count = regs_col.count_documents({
+             "event_id": event_id,
+             "status": "registered"
+    })
+
+            if update_fields["max_participants"] < registered_count:
+             return jsonify({
+            "error": f"Maximum participants cannot be less than the current registered students ({registered_count})."
+        }), 400     
+   
         except (TypeError, ValueError):
             return jsonify({"error": "max_participants must be a number"}), 400
     if "venue" in update_fields or "date_time" in update_fields:
@@ -1216,6 +1262,12 @@ def complete_event(event_id):
 
     if event["organizer_id"] != request.user_id:
         return jsonify({"error": "Unauthorized"}), 403
+    event_datetime = datetime.fromisoformat(event["date_time"])
+
+    if datetime.now() < event_datetime:
+     return jsonify({
+        "error": "You can only mark an event as completed after it has finished."
+    }), 400
 
     events_col.update_one(
         {"_id": ObjectId(event_id)},
@@ -1236,7 +1288,7 @@ def delete_event(event_id):
     if not event:
         return jsonify({"error": "Event not found"}), 404
 
-    # 👇 ADD THESE LINES HERE
+    
     data = request.get_json() or {}
     reason = data.get("reason", "").strip()
 
@@ -1247,13 +1299,23 @@ def delete_event(event_id):
 
     if request.role == "organizer" and event["organizer_id"] != request.user_id:
         return jsonify({"error": "You can only delete your own events"}), 403
+    
+     # Organizers cannot delete events within 7 days
+    if request.role == "organizer":
+     event_datetime = datetime.fromisoformat(event["date_time"])
+
+     if datetime.now() >= event_datetime - timedelta(days=EVENT_EDIT_LOCK_DAYS):
+        return jsonify({
+            "error": f"Events cannot be deleted within {EVENT_EDIT_LOCK_DAYS} days of the event."
+        }), 403
+    
 
     if event["status"] == "completed":
         return jsonify({
             "error": "Completed events cannot be deleted."
         }), 400
 
-        # Find everyone registered for this event
+   
     registrations = list(
     regs_col.find({
         "event_id": event_id,
@@ -1267,7 +1329,6 @@ def delete_event(event_id):
     })
 )
 
-    # Send cancellation email to each student
     for reg in registrations:
      user = users_col.find_one({
         "_id": ObjectId(reg["user_id"])
@@ -1781,10 +1842,12 @@ def mark_attendance(event_id):
         if isinstance(event_time, str):
             event_time = datetime.fromisoformat(event_time)
 
-        if datetime.now() < event_time:
+        today = datetime.now().date()
+
+        if today != event_time.date():
             return jsonify({
-                "error": "Attendance can only be marked after the event starts."
-            }), 400
+        "error": "Attendance can only be marked on the event date."
+    }), 400
         
         if event["status"] == "completed":
           return jsonify({
@@ -1801,7 +1864,7 @@ def mark_attendance(event_id):
 
     registration_id = data.get("registration_id")
 
-    attended = bool(data.get("attended", True))
+    # attended = bool(data.get("attended", True))
 
     # print("Scanned registration:", registration_id),
     reg = regs_col.find_one({
@@ -1816,14 +1879,14 @@ def mark_attendance(event_id):
 
     if reg.get("attended"):
      return jsonify({
-        "error": "You cannot cancel after attendance has been marked."
+        "error": "This QR code has already been scanned."
     }), 400
 
     result = regs_col.update_one(
      {"_id": reg["_id"]},
      {
         "$set": {
-            "attended": attended
+            "attended": True
         }
      },)
 
@@ -2008,15 +2071,6 @@ def unverify_user_id(user_id):
 
     return jsonify({"message": "User ID marked as unverified"})
 
-# @app.route("/api/admin/users/<user_id>/reject", methods=["POST"])
-# @role_required("admin")
-# def reject_organizer(user_id):
-#     result = users_col.delete_one({"_id": ObjectId(user_id), "role": "organizer", "approved": False})
-#     if result.deleted_count == 0:
-#         return jsonify({"error": "Pending organizer not found"}), 404
-#     return jsonify({"message": "Organizer rejected and removed"})
-
-
 @app.route("/api/admin/users/<user_id>", methods=["DELETE"])
 @role_required("admin")
 def admin_delete_user(user_id):
@@ -2036,32 +2090,7 @@ def admin_delete_user(user_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-#     # Send removal email
-#     try:
-#         msg = Message(
-#             subject="CampusConnect - Account Removed",
-#             recipients=[user["email"]],
-#         )
 
-#         msg.body = f"""
-# Hello {user['name']},
-
-# Your CampusConnect account has been removed by an administrator.
-
-# Reason:
-# {reason}
-
-# If you believe this was a mistake, please contact the administrator or 
-#  reply to this E-Mail.
-
-# Thank you,
-# CampusConnect Team
-# """
-
-#         mail.send(msg)
-
-#     except Exception as e:
-#         print("Removal email failed:", e)
 
     # Delete organizer's events and registrations
     if user["role"] == "organizer":
