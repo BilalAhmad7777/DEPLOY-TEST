@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
-import ConfirmationModal from "./ConfirmationModal.js";
 import "./index.css";
 
 
@@ -11,11 +10,6 @@ export default function OrganizerEvents() {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
-
-  // modal: { type: "delete" | "complete", event }
-  const [modal, setModal] = useState(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState("");
 
   const load = async () => {
     const [ev, s] = await Promise.all([
@@ -28,39 +22,39 @@ export default function OrganizerEvents() {
 
   useEffect(() => { load(); }, []);
 
-  const closeModal = () => {
-    if (modalLoading) return;
-    setModal(null);
-    setModalError("");
-  };
+  const handleDelete = async (id) => {
+  if (!window.confirm("Delete this event? This cannot be undone.")) return;
 
-  const handleDeleteConfirm = async (reason) => {
-    setModalError("");
-    setModalLoading(true);
-    try {
-      await api.deleteEvent(modal.event._id, reason);
-      setModal(null);
-      await load();
-    } catch (err) {
-      setModalError(err.message);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  const reason = window.prompt(
+    "Please enter the reason for cancelling this event:"
+  );
 
-  const handleCompleteConfirm = async () => {
-    setModalError("");
-    setModalLoading(true);
-    try {
-      await api.completeEvent(modal.event._id);
-      setModal(null);
-      await load();
-    } catch (err) {
-      setModalError(err.message);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  if (!reason || !reason.trim()) {
+    alert("Cancellation reason is required.");
+    return;
+  }
+
+  try {
+    await api.deleteEvent(id, reason.trim());
+    alert("Event deleted successfully.");
+    load();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+//   const completeEvent = async (id) => {
+//   if (!window.confirm("Mark this event as completed?")) return;
+
+//   await api.completeEvent(id);
+//   load();
+// };
+
+ const completeEvent = async (id) => {
+  if (!window.confirm("Mark this event as completed?")) return;
+
+  await api.completeEvent(id);
+  load();
+};
 
   return (
     <div className="container">
@@ -112,7 +106,7 @@ export default function OrganizerEvents() {
   {e.status === "closed" && (
     <button
       className="link-btn"
-      onClick={() => setModal({ type: "complete", event: e })}
+      onClick={() => completeEvent(e._id)}
     >
       Mark Completed
     </button>
@@ -140,7 +134,7 @@ export default function OrganizerEvents() {
 ) : (
   <button
     className="link-btn danger"
-    onClick={() => setModal({ type: "delete", event: e })}
+    onClick={() => handleDelete(e._id)}
   >
     Delete
   </button>
@@ -150,41 +144,6 @@ export default function OrganizerEvents() {
             </div>
           ))}
         </div>
-      )}
-
-      {modal?.type === "delete" && (
-        <ConfirmationModal
-          title="Delete Event"
-          message={`"${modal.event.title}" will be permanently deleted. This cannot be undone.`}
-          inputLabel="Cancellation reason"
-          inputPlaceholder="Let registered students know why this event is being cancelled..."
-          inputRequired
-          confirmText="Delete Event"
-          cancelText="Cancel"
-          danger
-          loading={modalLoading}
-          error={modalError}
-          onConfirm={handleDeleteConfirm}
-          onCancel={closeModal}
-        />
-      )}
-
-      {modal?.type === "complete" && (
-        <ConfirmationModal
-          title="Complete Event"
-          message="This action cannot be undone. Once completed:"
-          bodyList={[
-            "Attendance can no longer be edited.",
-            "Registrations will close permanently.",
-            "The event can no longer be deleted.",
-          ]}
-          confirmText="Complete Event"
-          cancelText="Cancel"
-          loading={modalLoading}
-          error={modalError}
-          onConfirm={handleCompleteConfirm}
-          onCancel={closeModal}
-        />
       )}
     </div>
   );

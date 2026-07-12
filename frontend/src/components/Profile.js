@@ -2,17 +2,14 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import ConfirmationModal from "./ConfirmationModal.js";
 import "./index.css";
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const maskEmail = (email) => {
   if (!email) return "";
@@ -27,35 +24,38 @@ export default function Profile() {
 };
 
   const sendOtp = async () => {
-    setSendingOtp(true);
     try {
       await api.sendDeleteOtp();
-      setShowOtpModal(true);
+      alert("OTP sent to your registered email.");
+      setOtpSent(true);
     } catch (err) {
       alert(err.message);
-    } finally {
-      setSendingOtp(false);
     }
   };
 
-  const closeOtpModal = () => {
-    if (deleteLoading) return;
-    setShowOtpModal(false);
-    setDeleteError("");
-  };
+  const handleDelete = async () => {
+    if (!otp) {
+      alert("Please enter OTP.");
+      return;
+    }
 
-  const handleDeleteConfirm = async (otp) => {
-    setDeleteError("");
-    setDeleteLoading(true);
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete your account?"
+      )
+    )
+      return;
+
     try {
       await api.deleteAccount(otp);
-      setShowOtpModal(false);
+
+      alert("Account deleted successfully.");
+
       logout();
+
       navigate("/events");
     } catch (err) {
-      setDeleteError(err.message);
-    } finally {
-      setDeleteLoading(false);
+      alert(err.message);
     }
   };
 
@@ -208,42 +208,43 @@ export default function Profile() {
             Deleting your account is permanent. This action cannot be undone.
           </p>
 
-          <button
-            className="danger-btn"
-            style={{
-              width: "100%",
-              marginTop: "15px",
-            }}
-            onClick={sendOtp}
-            disabled={sendingOtp}
-          >
-            {sendingOtp ? "Sending OTP..." : "Delete Account"}
-          </button>
+          {!otpSent ? (
+            <button
+              className="danger-btn"
+              style={{
+                width: "100%",
+                marginTop: "15px",
+              }}
+              onClick={sendOtp}
+            >
+              Delete Account
+            </button>
+          ) : (
+            <>
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                style={{
+                  marginTop: "15px",
+                  marginBottom: "15px",
+                }}
+              />
+
+              <button
+                className="danger-btn"
+                style={{
+                  width: "100%",
+                }}
+                onClick={handleDelete}
+              >
+                Confirm Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
-
-      {showOtpModal && (
-        <ConfirmationModal
-          title="Delete Account"
-          message="This action is permanent. An OTP has been sent to your registered email — enter it below to confirm."
-          bodyList={[
-            "Your profile and account data will be permanently removed.",
-            "Any active event registrations will be lost.",
-            "This cannot be undone.",
-          ]}
-          inputLabel="Enter OTP"
-          inputType="otp"
-          inputPlaceholder="6-digit code"
-          inputRequired
-          confirmText="Delete Account"
-          cancelText="Cancel"
-          danger
-          loading={deleteLoading}
-          error={deleteError}
-          onConfirm={handleDeleteConfirm}
-          onCancel={closeOtpModal}
-        />
-      )}
     </div>
   );
 }

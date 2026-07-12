@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
-import ConfirmationModal from "./ConfirmationModal.js";
 import "./index.css";
 
 export default function StudentDashboard() {
   const [stats, setStats] = useState(null);
   const [regs, setRegs] = useState([]);
   const [history, setHistory] = useState([]);
-
-  // cancelTarget: eventId being cancelled, or null
-  const [cancelTarget, setCancelTarget] = useState(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelError, setCancelError] = useState("");
 
   const load = async () => {
     const [s, r, h] = await Promise.all([api.studentDashboard(), api.myRegistrations(), api.myHistory()]);
@@ -23,24 +17,9 @@ export default function StudentDashboard() {
 
   useEffect(() => { load(); }, []);
 
-  const closeCancelModal = () => {
-    if (cancelLoading) return;
-    setCancelTarget(null);
-    setCancelError("");
-  };
-
-  const handleCancelConfirm = async () => {
-    setCancelError("");
-    setCancelLoading(true);
-    try {
-      await api.cancelRegistration(cancelTarget);
-      setCancelTarget(null);
-      await load();
-    } catch (err) {
-      setCancelError(err.message);
-    } finally {
-      setCancelLoading(false);
-    }
+  const handleCancel = async (eventId) => {
+    await api.cancelRegistration(eventId);
+    load();
   };
 
   return (
@@ -71,31 +50,23 @@ export default function StudentDashboard() {
     gap: "10px",
   }}
 >
-  {/* FIX: the backend's registration_qr route 403s unless
-      status === "registered" — showing these links for pending/
-      waitlisted/rejected registrations sent students to a ticket
-      page that always failed to load a QR code. */}
-  {r.status === "registered" && (
-    <>
-      <Link
-        to={`/ticket/${r.registration_id}`}
-        className="status-pill"
-        style={{
-          textDecoration: "none",
-        }}
-      >
-        🎫 Ticket
-      </Link>
-      <a
-        href={`/ticket/${r.registration_id}?download=true`}
-        target="_blank"
-        rel="noreferrer"
-        className="link-btn"
-      >
-        📄 Download PDF
-      </a>
-    </>
-  )}
+  <Link
+    to={`/ticket/${r.registration_id}`}
+    className="status-pill"
+    style={{
+      textDecoration: "none",
+    }}
+  >
+    🎫 Ticket
+  </Link>
+  <a
+  href={`/ticket/${r.registration_id}?download=true`}
+  target="_blank"
+  rel="noreferrer"
+  className="link-btn"
+>
+  📄 Download PDF
+</a>
 
   {r.attended ? (
   <span
@@ -106,14 +77,10 @@ export default function StudentDashboard() {
   >
     ✓ Attended
   </span>
-) : r.status === "rejected" ? null : (
-  // FIX: the backend's cancel_registration route only accepts
-  // registered/waitlisted/pending_verification — a rejected
-  // registration always returned "No active registration found."
-  // Hide Cancel for it instead of offering an action that fails.
+) : (
   <button
     className="delete-btn"
-    onClick={() => setCancelTarget(r.event._id)}
+    onClick={() => handleCancel(r.event._id)}
   >
     Cancel
   </button>
@@ -140,20 +107,6 @@ export default function StudentDashboard() {
           </ul>
         )}
       </section>
-
-      {cancelTarget && (
-        <ConfirmationModal
-          title="Cancel Registration"
-          message="Are you sure you want to cancel this registration? You'll lose your spot and may need to re-register if space is available."
-          confirmText="Cancel Registration"
-          cancelText="Keep Registration"
-          danger
-          loading={cancelLoading}
-          error={cancelError}
-          onConfirm={handleCancelConfirm}
-          onCancel={closeCancelModal}
-        />
-      )}
     </div>
   );
 }

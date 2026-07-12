@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
-import ConfirmationModal from "./ConfirmationModal.js";
 import "./index.css";
 
 
@@ -9,11 +8,6 @@ export default function EventRegistrations() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [regs, setRegs] = useState([]);
-
-  // rejectTarget: registration object being rejected, or null
-  const [rejectTarget, setRejectTarget] = useState(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState("");
 
   const load = async () => {
     const [ev, r] = await Promise.all([api.getEvent(id), api.eventRegistrations(id)]);
@@ -37,25 +31,23 @@ export default function EventRegistrations() {
   }
 };
 
-  const closeRejectModal = () => {
-    if (modalLoading) return;
-    setRejectTarget(null);
-    setModalError("");
-  };
+const rejectStudent = async (registrationId) => {
+  const reason = prompt("Reason for rejection:");
 
-  const handleRejectConfirm = async (reason) => {
-    setModalError("");
-    setModalLoading(true);
-    try {
-      await api.rejectRegistration(id, rejectTarget._id, reason);
-      setRejectTarget(null);
-      await load();
-    } catch (err) {
-      setModalError(err.message);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  if (!reason) return;
+
+  try {
+    await api.rejectRegistration(
+      id,
+      registrationId,
+      reason
+    );
+
+    load();
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
   // const exportCsvText = () => {
   //   const rows = [["Name", "Email", "Status", "Attended"]];
@@ -184,7 +176,7 @@ const waitlisted = regs.filter(
 
             <button
   className="danger-btn"
-  onClick={() => setRejectTarget(r)}
+  onClick={() => rejectStudent(r._id)}
 >
   ❌ Reject
 </button>
@@ -226,23 +218,6 @@ const waitlisted = regs.filter(
             ))}
           </ul>
         </section>
-      )}
-
-      {rejectTarget && (
-        <ConfirmationModal
-          title="Reject Student"
-          message={`Reject ${rejectTarget.student_name}'s registration request?`}
-          inputLabel="Reason for rejection"
-          inputPlaceholder="Let the student know why their request is being rejected..."
-          inputRequired
-          confirmText="Reject"
-          cancelText="Cancel"
-          danger
-          loading={modalLoading}
-          error={modalError}
-          onConfirm={handleRejectConfirm}
-          onCancel={closeRejectModal}
-        />
       )}
     </div>
   );
