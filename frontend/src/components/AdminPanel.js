@@ -304,36 +304,55 @@ console.log("Reports state:", reports);
   ) : (
     <ul className="subject-list">
       {reports.map((report) => (
-        <li key={report._id} className="subject-item">
-          <div>
-            <strong>🚩 {report.reason}</strong>
+        <li
+  key={report._id}
+  className="subject-item"
+  style={{
+    justifyContent: "space-between",
+    alignItems: "center",
+  }}
+>
+  <div>
+    <strong>🚩 {report.reason}</strong>
 
-<br />
+    <br />
 
-<small>
-  <strong>Event:</strong> {report.target_name}
-</small>
+    <small>
+      <strong>Event:</strong> {report.target_name}
+    </small>
 
-<br />
+    <br />
 
-<small>
-  <strong>Reported By:</strong> {report.reporter_name}
-</small>
+    <small>
+      <strong>Reported By:</strong> {report.reporter_name}
+    </small>
 
-<br />
+    <br />
 
-<small>
-  <strong>Status:</strong> {report.status}
-</small>
+    <small>
+      <strong>Status:</strong> {report.status}
+    </small>
 
-<br />
+    <br />
 
-<small>
-  <strong>Description:</strong><br />
-  {report.description || "No description"}
-</small>
-          </div>
-        </li>
+    <small>
+      <strong>Description:</strong><br />
+      {report.description || "No description"}
+    </small>
+  </div>
+
+  {report.status === "pending" && (
+    <button
+      className="status-pill"
+      onClick={async () => {
+        await api.resolveReport(report._id);
+        load();
+      }}
+    >
+      ✅ Resolve
+    </button>
+  )}
+</li>
       ))}
     </ul>
   )}

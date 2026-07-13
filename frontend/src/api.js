@@ -182,6 +182,10 @@ rejectRegistration: (eventId, registrationId, reason) =>
   organizerDashboard: () => request("/api/dashboard/organizer"),
   adminDashboard: () => request("/api/dashboard/admin"),
   getReports: () => request("/api/admin/reports"),
+  resolveReport: (id) =>
+  request(`/api/admin/reports/${id}/resolve`, {
+    method: "POST",
+  }),
   adminListUsers: () => request("/api/admin/users"),
   approveOrganizer: (id) => request(`/api/admin/users/${id}/approve`, { method: "POST" }),
   
