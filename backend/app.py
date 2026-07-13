@@ -1121,7 +1121,7 @@ def create_event():
               )
     
     if event_time < datetime.now() + timedelta(days=7):
-    return jsonify({
+     return jsonify({
         "error": "Events must be created at least 7 days before the event date."
     }), 400
 
