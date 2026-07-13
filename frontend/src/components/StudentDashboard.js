@@ -11,11 +11,17 @@ export default function StudentDashboard() {
   const [showTerms, setShowTerms] = useState(false);
 
   const load = async () => {
-    const [s, r, h] = await Promise.all([api.studentDashboard(), api.myRegistrations(), api.myHistory()]);
+  try {
+    const s = await api.studentDashboard();
     setStats(s);
-    setRegs(r);
-    setHistory(h);
-  };
+
+    // Temporary test
+    setRegs([]);
+    setHistory([]);
+  } catch (err) {
+    console.log(err);
+  }
+};
 
   useEffect(() => { load(); }, []);
 
