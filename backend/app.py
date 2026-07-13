@@ -1147,10 +1147,10 @@ def create_event():
 
     hour = event_time.hour
 
-    if hour < 7 or hour >= 18:
-     return jsonify({
-        "error": "Events can only be scheduled between 7:00 AM and 6:00 PM."
-    }), 400
+    # if hour < 7 or hour >= 18:
+    #  return jsonify({
+    #     "error": "Events can only be scheduled between 7:00 AM and 6:00 PM."
+    # }), 400
     event_date = data["date_time"][:10]   # YYYY-MM-DD
 
     existing_events = events_col.find({
