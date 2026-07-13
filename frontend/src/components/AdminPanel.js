@@ -306,15 +306,32 @@ console.log("Reports state:", reports);
       {reports.map((report) => (
         <li key={report._id} className="subject-item">
           <div>
-            <strong>{report.reason}</strong>
-            <br />
-            <small>Target: {report.target_type}</small>
-            <br />
-            <small>Status: {report.status}</small>
-            <br />
-            <small>
-              {report.description || "No description"}
-            </small>
+            <strong>🚩 {report.reason}</strong>
+
+<br />
+
+<small>
+  <strong>Event:</strong> {report.target_name}
+</small>
+
+<br />
+
+<small>
+  <strong>Reported By:</strong> {report.reporter_name}
+</small>
+
+<br />
+
+<small>
+  <strong>Status:</strong> {report.status}
+</small>
+
+<br />
+
+<small>
+  <strong>Description:</strong><br />
+  {report.description || "No description"}
+</small>
           </div>
         </li>
       ))}

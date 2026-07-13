@@ -2320,10 +2320,35 @@ def get_reports():
     )
     print("REPORTS:", reports)
 
-    return jsonify([
-        serialize(report)
-        for report in reports
-    ])
+    result = []
+
+    for report in reports:
+        r = serialize(report)
+    
+        # Reporter name
+        reporter = users_col.find_one({
+            "_id": ObjectId(r["reporter_id"])
+        })
+
+        r["reporter_name"] = (
+            reporter["name"] if reporter else "Unknown User"
+        )
+    
+        # Event title
+        if r["target_type"] == "event":
+            event = events_col.find_one({
+                "_id": ObjectId(r["target_id"])
+            })
+    
+            r["target_name"] = (
+                event["title"] if event else "Deleted Event"
+            )
+    
+        result.append(r)
+    
+    return jsonify(result)
+
+   
 
 
 
@@ -2346,6 +2371,26 @@ def resolve_report(report_id):
         return jsonify({"error": "Invalid report id"}), 400
 
     return jsonify({"message": "Report resolved successfully."})
+
+@app.route("/api/admin/reports/<report_id>/resolve", methods=["POST"])
+@role_required("admin")
+def resolve_report(report_id):
+    try:
+        reports_col.update_one(
+            {"_id": ObjectId(report_id)},
+            {
+                "$set": {
+                    "status": "resolved",
+                    "resolved_at": datetime.now(),
+                }
+            },
+        )
+    except Exception:
+        return jsonify({"error": "Invalid report id"}), 400
+
+    return jsonify({
+        "message": "Report resolved successfully."
+    })
 
 
 
