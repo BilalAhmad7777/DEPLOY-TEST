@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./index.css";
+import TermsModal from "../components/TermsModal";
 
 export default function Signup({role}) {
   const [name, setName] = useState("");
@@ -21,6 +22,9 @@ const [idPreview, setIdPreview] = useState("");
 const [uploadingId, setUploadingId] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const [showTerms, setShowTerms] = useState(false);
+const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 const handleImageUpload = async (e) => {
   const file = e.target.files[0];
@@ -216,12 +220,71 @@ if (!collegeId) {
   />
 )}
 
+        <div
+  style={{
+    marginTop: "15px",
+    marginBottom: "20px",
+  }}
+>
+  <label
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      flexWrap: "wrap",
+    }}
+  >
+    <input
+      type="checkbox"
+      checked={acceptedTerms}
+      onChange={(e) => setAcceptedTerms(e.target.checked)}
+    />
 
-        <button type="submit">Sign up</button>
+    <span>
+      I agree to the{" "}
+      <button
+        type="button"
+        onClick={() => setShowTerms(true)}
+        style={{
+          border: "none",
+          background: "none",
+          color: "#2563eb",
+          cursor: "pointer",
+          textDecoration: "underline",
+          padding: 0,
+          fontSize: "inherit",
+        }}
+      >
+        Terms & Community Guidelines
+      </button>
+    </span>
+  </label>
+</div>
+        <button
+  type="submit"
+  disabled={!acceptedTerms}
+>
+  Sign Up
+</button>
         <p className="switch">
           Already have an account? <Link to={`/login/${signupRole}`}>Log in</Link>
         </p>
       </form>
+
+
+      {showTerms && (
+  <TermsModal
+    role={role}
+    onAccept={() => {
+      setAcceptedTerms(true);
+      setShowTerms(false);
+    }}
+    onDecline={() => {
+      setShowTerms(false);
+      navigate("/");
+    }}
+  />
+)}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./index.css";
 import ConfirmationModal from "./ConfirmationModal";
+import TermsModal from "../components/TermsModal";
 
 export default function OrganizerEvents() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function OrganizerEvents() {
 const [eventToComplete, setEventToComplete] = useState(null);
 const [completeLoading, setCompleteLoading] = useState(false);
 const [completeError, setCompleteError] = useState("");
+const [showTerms, setShowTerms] = useState(false);
 
   const load = async () => {
 
@@ -107,6 +109,20 @@ const confirmCompleteEvent = async () => {
     <div className="container">
       <div className="dashboard-header">
         <h1>My Created Events</h1>
+        <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "15px",
+  }}
+>
+  <button
+    className="status-pill"
+    onClick={() => setShowTerms(true)}
+  >
+    📘 Organizer Rules
+  </button>
+</div>
         <Link to="/organizer/events/new"><button>+ New Event</button></Link>
       </div>
 
@@ -253,6 +269,14 @@ const confirmCompleteEvent = async () => {
       setCompleteError("");
     }}
     onConfirm={confirmCompleteEvent}
+  />
+)}
+
+{showTerms && (
+  <TermsModal
+    role="organizer"
+    readOnly
+    onClose={() => setShowTerms(false)}
   />
 )}
     </div>

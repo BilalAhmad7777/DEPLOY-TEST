@@ -1733,9 +1733,9 @@ def cancel_registration(event_id):
 }), 200
 
 
-@app.route("/api/registrations/history", methods=["GET"])
-@role_required("student")
-def my_attendance_history():
+# @app.route("/api/registrations/history", methods=["GET"])
+# @role_required("student")
+# def my_attendance_history():
 
     regs = list(
         regs_col.find({

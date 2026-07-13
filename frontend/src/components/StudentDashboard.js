@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import "./index.css";
+import TermsModal from "./TermsModal";
 
 export default function StudentDashboard() {
   const [stats, setStats] = useState(null);
@@ -25,6 +26,20 @@ export default function StudentDashboard() {
   return (
     <div className="container">
       <h1>My Events</h1>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "15px",
+  }}
+>
+  <button
+    className="status-pill"
+    onClick={() => setShowTerms(true)}
+  >
+    📘 Rules & Guidelines
+  </button>
+</div>
 
       {stats && (
         <section className="stat-bar">
@@ -136,6 +151,14 @@ export default function StudentDashboard() {
           </ul>
         )}
       </section>
+
+      {showTerms && (
+  <TermsModal
+    role="student"
+    readOnly
+    onClose={() => setShowTerms(false)}
+  />
+)}
     </div>
   );
 }
