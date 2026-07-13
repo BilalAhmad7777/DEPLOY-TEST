@@ -68,6 +68,7 @@ events_col = db["events"]
 regs_col = db["registrations"]
 ratings_col = db.ratings
 categories_col = db["categories"]
+reports_col = db.reports
 
 DEFAULT_CATEGORIES = ["Tech", "Sports", "Cultural", "Workshop", "Seminar"]
 
@@ -1465,7 +1466,7 @@ def register_for_event(event_id):
         "error": f"This event is only open to students from: {', '.join(allowed_colleges)}."
            }), 403
     
-    
+
     reg = {
     "registration_id": generate_registration_id(),
     
@@ -1997,6 +1998,9 @@ def organizer_dashboard():
     })
 
 
+
+
+
 @app.route("/api/dashboard/admin", methods=["GET"])
 @role_required("admin")
 def admin_dashboard():
@@ -2128,6 +2132,57 @@ def unverify_user_id(user_id):
 
     return jsonify({"message": "User ID marked as unverified"})
 
+
+
+
+
+@app.route("/api/reports", methods=["POST"])
+@login_required
+def create_report():
+    data = request.get_json()
+
+    target_type = data.get("target_type")
+    target_id = data.get("target_id")
+    reason = data.get("reason", "").strip()
+    description = data.get("description", "").strip()
+
+    if target_type not in ["event", "student", "organizer"]:
+        return jsonify({"error": "Invalid target type"}), 400
+
+    if not target_id:
+        return jsonify({"error": "Target is required"}), 400
+
+    if not reason:
+        return jsonify({"error": "Reason is required"}), 400
+
+    existing = reports_col.find_one({
+        "reporter_id": request.user_id,
+        "target_type": target_type,
+        "target_id": target_id,
+    })
+
+    if existing:
+        return jsonify({
+            "error": "You have already reported this."
+        }), 409
+
+    report = {
+        "reporter_id": request.user_id,
+        "target_type": target_type,
+        "target_id": target_id,
+        "reason": reason,
+        "description": description,
+        "status": "pending",
+        "created_at": datetime.now(),
+    }
+
+    reports_col.insert_one(report)
+
+    return jsonify({"message": "Report submitted successfully."}), 201
+
+
+
+
 @app.route("/api/admin/users/<user_id>", methods=["DELETE"])
 @role_required("admin")
 def admin_delete_user(user_id):
@@ -2256,6 +2311,42 @@ def admin_delete_event(event_id):
 
     return jsonify({"message": "Event deleted successfully"})
 
+@app.route("/api/admin/reports", methods=["GET"])
+@login_required
+@role_required("admin")
+def get_reports():
+    reports = list(
+        reports_col.find().sort("created_at", -1)
+    )
+
+    return jsonify([
+        serialize(report)
+        for report in reports
+    ])
+
+
+
+
+@app.route("/api/admin/reports/<report_id>/resolve", methods=["POST"])
+@login_required
+@role_required("admin")
+def resolve_report(report_id):
+    try:
+        reports_col.update_one(
+            {"_id": ObjectId(report_id)},
+            {
+                "$set": {
+                    "status": "resolved",
+                    "resolved_at": datetime.now(),
+                }
+            },
+        )
+    except Exception:
+        return jsonify({"error": "Invalid report id"}), 400
+
+    return jsonify({"message": "Report resolved successfully."})
+
+
 
 @app.route("/api/health", methods=["GET"])
 def health():
@@ -2264,3 +2355,6 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000),
+
+
+

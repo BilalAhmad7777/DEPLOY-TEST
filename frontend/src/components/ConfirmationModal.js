@@ -28,6 +28,10 @@ export default function ConfirmationModal({
   inputType = "text",
   inputPlaceholder = "",
   inputRequired = false,
+  selectLabel,
+selectOptions = [],
+selectValue = "",
+onSelectChange,
   confirmText = "Confirm",
   cancelText = "Cancel",
   danger = false,
@@ -50,13 +54,23 @@ export default function ConfirmationModal({
 }, [loading,onCancel]);
 
   const handleConfirmClick = () => {
-    if (inputLabel && inputRequired && !value.trim()) {
-      setLocalError(`${inputLabel} is required.`);
-      return;
-    }
-    setLocalError("");
-    onConfirm(inputLabel ? value.trim() : undefined);
-  };
+  if (selectLabel && !selectValue) {
+    setLocalError("Please select a reason.");
+    return;
+  }
+
+  if (inputLabel && inputRequired && !value.trim()) {
+    setLocalError(`${inputLabel} is required.`);
+    return;
+  }
+
+  setLocalError("");
+
+ onConfirm({
+  reason: selectValue,
+  description: inputLabel ? value.trim() : "",
+});
+};
 
   return (
     <div className="cm-overlay" onClick={() => !loading && onCancel()}>
@@ -81,6 +95,28 @@ export default function ConfirmationModal({
             ))}
           </ul>
         )}
+        
+
+
+        {selectLabel && (
+  <div className="cm-input-group">
+    <label>{selectLabel}</label>
+
+    <select
+      value={selectValue}
+      onChange={(e) => onSelectChange(e.target.value)}
+    >
+      <option value="">Select a reason</option>
+
+      {selectOptions.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
 
         {inputLabel && (
           <div className="cm-input-group">

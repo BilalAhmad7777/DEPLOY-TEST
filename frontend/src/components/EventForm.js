@@ -31,33 +31,6 @@ const COLLEGES = [
   "Bennett University",
 ];
 
-const COURSES = [
-  "B.Tech",
-  "BCA",
-  "MCA",
-  "MBA",
-  "BBA",
-  "M.Tech",
-];
-
-const DEPARTMENTS = [
-  "CSE",
-  "CSE (AI)",
-  "CSE (DS)",
-  "IT",
-  "ECE",
-  "EE",
-  "ME",
-  "CE",
-  "VLSI Design & Technology",
-];
-
-const YEARS = [
-  "1st Year",
-  "2nd Year",
-  "3rd Year",
-  "4th Year",
-];
 
 export default function EventForm() {
   const { id } = useParams();
@@ -208,6 +181,7 @@ const eventData = {
     if (isEdit) {
       await api.updateEvent(id, eventData);
     } else {
+      console.log("EVENT DATA:", eventData);
       await api.createEvent(eventData);
     }
 

@@ -165,6 +165,13 @@ rejectRegistration: (eventId, registrationId, reason) =>
   }),
 
 
+  report: (payload) =>
+  request("/api/reports", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+
+
   myRegistrations: () => request("/api/registrations/me"),
   myHistory: () => request("/api/registrations/history"),
   eventRegistrations: (id) => request(`/api/events/${id}/registrations`),
@@ -174,7 +181,7 @@ rejectRegistration: (eventId, registrationId, reason) =>
   studentDashboard: () => request("/api/dashboard/student"),
   organizerDashboard: () => request("/api/dashboard/organizer"),
   adminDashboard: () => request("/api/dashboard/admin"),
-
+ getReports: () => request("/api/admin/reports"),
   adminListUsers: () => request("/api/admin/users"),
   approveOrganizer: (id) => request(`/api/admin/users/${id}/approve`, { method: "POST" }),
   
@@ -207,7 +214,14 @@ rejectRegistration: (eventId, registrationId, reason) =>
         body: JSON.stringify({ reason }),
     }),
   // deleteUser: (id) => request(`/admin/users/${id}`, { method: "DELETE" }),
-  adminDeleteEvent: (id) => request(`/api/admin/events/${id}`, { method: "DELETE" }),
+  // adminDeleteEvent: (id) => request(`/api/admin/events/${id}`, { method: "DELETE" }),
+  adminDeleteEvent: (id, reason) =>
+  request(`/api/admin/events/${id}`, {
+    method: "DELETE",
+    body: JSON.stringify({
+      reason,
+    }),
+  }),
 sendDeleteOtp: () =>
   request("/api/account/send-delete-otp", {
     method: "POST",

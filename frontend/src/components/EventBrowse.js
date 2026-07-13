@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import "./index.css";
+import ConfirmationModal from "./ConfirmationModal";
 
 export default function EventBrowse() {
   const [events, setEvents] = useState([]);
@@ -10,6 +11,10 @@ export default function EventBrowse() {
   const [filters, setFilters] = useState({ search: "", category: "", venue: "", status: "" , college: ""});
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+const [eventToDelete, setEventToDelete] = useState(null);
+const [deleteLoading, setDeleteLoading] = useState(false);
+const [deleteError, setDeleteError] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -27,6 +32,36 @@ export default function EventBrowse() {
     e.preventDefault();
     load();
   };
+
+
+
+  const confirmDelete = async (reason) => {
+  if (!reason.trim()) {
+    setDeleteError("Cancellation reason is required.");
+    return;
+  }
+
+  setDeleteLoading(true);
+  setDeleteError("");
+
+  try {
+    await api.adminDeleteEvent(
+      eventToDelete,
+      reason.trim()
+    );
+
+    setDeleteModalOpen(false);
+    setEventToDelete(null);
+
+    await load();
+  } catch (err) {
+    setDeleteError(err.message);
+  } finally {
+    setDeleteLoading(false);
+  }
+};
+
+
 
   return (
     <div className="container">
@@ -140,19 +175,13 @@ export default function EventBrowse() {
       marginTop: "12px",
       width: "100%",
     }}
-   onClick={async (event) => {
+   onClick={(event) => {
   event.stopPropagation();
   event.preventDefault();
 
-  if (!window.confirm(`Delete "${e.title}" permanently?`)) return;
-
-  try {
-    await api.adminDeleteEvent(e._id);
-    await load();
-    alert("Event deleted successfully.");
-  } catch (err) {
-    alert(err.message);
-  }
+  setEventToDelete(e._id);
+  setDeleteError("");
+  setDeleteModalOpen(true);
 }}
   >
     🗑 Delete Event
@@ -161,6 +190,32 @@ export default function EventBrowse() {
           ))}
         </div>
       )}
+
+      {deleteModalOpen && (
+  <ConfirmationModal
+    title="Delete Event"
+    message="Are you sure you want to delete this event?"
+    bodyList={[
+      "This action cannot be undone.",
+      "All registrations will be removed.",
+      "Registered students will receive a cancellation email.",
+    ]}
+    inputLabel="Reason for cancellation"
+    inputPlaceholder="Enter the cancellation reason..."
+    inputRequired
+    confirmText="Delete Event"
+    cancelText="Cancel"
+    danger
+    loading={deleteLoading}
+    error={deleteError}
+    onCancel={() => {
+      setDeleteModalOpen(false);
+      setEventToDelete(null);
+      setDeleteError("");
+    }}
+    onConfirm={confirmDelete}
+  />
+)}
     </div>
   );
 }

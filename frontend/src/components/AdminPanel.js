@@ -17,17 +17,25 @@ const [deleteUserModalOpen, setDeleteUserModalOpen] = useState(false);
 const [userToDelete, setUserToDelete] = useState(null);
 const [deleteUserLoading, setDeleteUserLoading] = useState(false);
 const [deleteUserError, setDeleteUserError] = useState("");
+const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+const [eventToDelete, setEventToDelete] = useState(null);
+const [deleteLoading, setDeleteLoading] = useState(false);
+const [deleteError, setDeleteError] = useState("");
+const [reports, setReports] = useState([]);
+
 
   const load = async () => {
-    const [s, u, e] = await Promise.all([
+    const [s, u, e,r] = await Promise.all([
   api.adminDashboard(),
   api.adminListUsers(),
-  api.getEvents()
+  api.getEvents(),
+  api.getReports(),
 ]);
 
 setStats(s);
 setUsers(u);
 setEvents(e);
+setReports(reports);
   };
 
   useEffect(() => { load(); }, []);
@@ -106,6 +114,60 @@ const confirmRejectOrganizer = async (reason) => {
     setRejectLoading(false);
   }
 };
+
+const confirmDelete = async (reason) => {
+  if (!reason.trim()) {
+    setDeleteError("Cancellation reason is required.");
+    return;
+  }
+
+  setDeleteLoading(true);
+
+  try {
+    await api.adminDeleteEvent(
+      eventToDelete,
+      reason.trim()
+    );
+
+    setDeleteModalOpen(false);
+    setEventToDelete(null);
+
+    await load();
+  } catch (err) {
+    setDeleteError(err.message);
+  } finally {
+    setDeleteLoading(false);
+  }
+};
+
+// const confirmDelete = async (reason) => {
+//   if (!reason.trim()) {
+//     setDeleteError("Cancellation reason is required.");
+//     return;
+//   }
+
+//   setDeleteLoading(true);
+//   setDeleteError("");
+
+//   try {
+//     await api.adminDeleteEvent(
+//       eventToDelete,
+//       reason.trim()
+//     );
+
+//     setDeleteModalOpen(false);
+//     setEventToDelete(null);
+
+//     await load();
+//   } catch (err) {
+//     setDeleteError(err.message);
+//   } finally {
+//     setDeleteLoading(false);
+//   }
+// };
+
+
+
   return (
     <div className="container">
       <h1>Admin Panel</h1>
@@ -206,18 +268,50 @@ const confirmRejectOrganizer = async (reason) => {
             <small>{event.date}</small>
           </div>
 
+          
+
           <button
-            className="delete-btn"
-            onClick={async () => {
-              if (!window.confirm("Delete this event?")) return;
+  className="delete-btn"
+  onClick={() => {
+    console.log("Opening modal");
+    setEventToDelete(event._id);
+    setDeleteError("");
+    setDeleteModalOpen(true);
+  }}
+>
+  Delete
+</button>
 
-              await api.adminDeleteEvent(event._id);
 
-              load();
-            }}
-          >
-            Delete Event
-          </button>
+
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+
+
+
+<section className="card">
+  <h2>🚩 Reports</h2>
+
+  {reports.length === 0 ? (
+    <p className="empty">No reports found.</p>
+  ) : (
+    <ul className="subject-list">
+      {reports.map((report) => (
+        <li key={report._id} className="subject-item">
+          <div>
+            <strong>{report.reason}</strong>
+            <br />
+            <small>Target: {report.target_type}</small>
+            <br />
+            <small>Status: {report.status}</small>
+            <br />
+            <small>
+              {report.description || "No description"}
+            </small>
+          </div>
         </li>
       ))}
     </ul>
@@ -587,6 +681,33 @@ const confirmRejectOrganizer = async (reason) => {
 )}
 
 
+{deleteModalOpen && (
+  <ConfirmationModal
+    title="Delete Event"
+    message="Are you sure you want to delete this event?"
+    bodyList={[
+      "This action cannot be undone.",
+      "All registrations will be removed.",
+      "Registered students will receive a cancellation email.",
+    ]}
+    inputLabel="Reason for cancellation"
+    inputPlaceholder="Enter the cancellation reason..."
+    inputRequired
+    confirmText="Delete Event"
+    cancelText="Cancel"
+    danger
+    loading={deleteLoading}
+    error={deleteError}
+    onCancel={() => {
+      setDeleteModalOpen(false);
+      setEventToDelete(null);
+      setDeleteError("");
+    }}
+    onConfirm={confirmDelete}
+  />
+)}
+
     </div>
   
-  )}
+  );
+}

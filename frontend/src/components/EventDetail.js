@@ -16,6 +16,11 @@ export default function EventDetail() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 const [cancelLoading, setCancelLoading] = useState(false);
 const [cancelError, setCancelError] = useState("");
+const [showReportModal, setShowReportModal] = useState(false);
+const [reportReason, setReportReason] = useState("");
+const [reportDescription, setReportDescription] = useState("");
+const [reportLoading, setReportLoading] = useState(false);
+const [reportError, setReportError] = useState("");
 
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -106,6 +111,33 @@ const [feedback, setFeedback] = useState("");
 const eligible =
   !event.allowed_colleges?.length ||
   event.allowed_colleges.includes(user?.college);
+
+
+
+  const submitReport = async ({ reason, description }) => {
+  setReportLoading(true);
+  setReportError("");
+
+  try {
+    await api.report({
+      target_type: "event",
+      target_id: event._id,
+      reason,
+      description,
+    });
+
+    setShowReportModal(false);
+    setReportReason("");
+    setReportDescription("");
+
+    alert("Report submitted successfully.");
+  } catch (err) {
+    setReportError(err.message);
+  } finally {
+    setReportLoading(false);
+  }
+};
+
 
 
   return (
@@ -217,8 +249,21 @@ const eligible =
           >
             Not Eligible
           </button>
+
+          
         )
-      )}
+        
+      )
+      }
+      <button
+  className="link-btn danger"
+  onClick={() => {
+    setReportError("");
+    setShowReportModal(true);
+  }}
+>
+  🚩 Report Event
+</button>
 
       {user &&
   user.role === "student" &&
@@ -322,6 +367,46 @@ const eligible =
           onConfirm={confirmCancel}
         />
       )}
+
+      {showReportModal && (
+  <ConfirmationModal
+    title="Report Event"
+    message="Help us keep the platform safe by reporting inappropriate events."
+    bodyList={[
+      "False reports may lead to action against your account.",
+      "Our admin team will review your report.",
+    ]}
+    selectLabel="Reason"
+    selectOptions={[
+      "Spam",
+      "Fake Event",
+      "Inappropriate Content",
+      "Harassment",
+      "Wrong Information",
+      "Other",
+    ]}
+    selectValue={reportReason}
+    onSelectChange={setReportReason}
+    inputLabel="Description (Optional)"
+    inputPlaceholder="Tell us more..."
+    inputValue={reportDescription}
+    onInputChange={setReportDescription}
+    confirmText="Submit Report"
+    cancelText="Cancel"
+    danger
+    loading={reportLoading}
+    error={reportError}
+    onCancel={() => {
+      setShowReportModal(false);
+      setReportReason("");
+      setReportDescription("");
+      setReportError("");
+    }}
+    onConfirm={submitReport}
+  />
+)}
+
+
     </div>
   );
 }
