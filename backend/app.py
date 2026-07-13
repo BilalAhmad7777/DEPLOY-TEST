@@ -2372,25 +2372,7 @@ def resolve_report(report_id):
 
     return jsonify({"message": "Report resolved successfully."})
 
-@app.route("/api/admin/reports/<report_id>/resolve", methods=["POST"])
-@role_required("admin")
-def resolve_report(report_id):
-    try:
-        reports_col.update_one(
-            {"_id": ObjectId(report_id)},
-            {
-                "$set": {
-                    "status": "resolved",
-                    "resolved_at": datetime.now(),
-                }
-            },
-        )
-    except Exception:
-        return jsonify({"error": "Invalid report id"}), 400
 
-    return jsonify({
-        "message": "Report resolved successfully."
-    })
 
 
 
